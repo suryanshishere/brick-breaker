@@ -1,0 +1,24 @@
+import {describe,it,expect} from 'vitest';
+import {newGame,newSave,layout,launch,step,complete,validSave,PADDLE_Y,W,H,BRICK,MAX_BALLS,packSave,parseSave} from '../src/engine';
+describe('levels and progress',()=>{
+ it('has twenty deterministic, bounded, unique layouts',()=>{const signatures=new Set();for(let level=1;level<=20;level++){const b=layout(level);expect(b.length).toBeGreaterThan(15);expect(b.every(b=>b.x>=0&&b.x+BRICK<=W&&b.y>60&&b.y+BRICK<PADDLE_Y)).toBe(true);expect(layout(level)).toEqual(b);signatures.add(JSON.stringify(b));}expect(signatures.size).toBe(20);});
+ it('only unlocks on victory, caps at 20, and preserves the best score',()=>{const s=newSave();s.game.status='lost';complete(s);expect(s.unlocked).toBe(1);s.game.status='won';s.game.score=1000;complete(s);expect(s.unlocked).toBe(2);expect(s.completed).toEqual([1]);s.game.score=500;complete(s);expect(s.best[1]).toBe(1000);s.unlocked=20;s.game=newGame(20);s.game.status='won';complete(s);expect(s.unlocked).toBe(20);});
+ it('resumes a serialized attempt with identical physics',()=>{const a=newGame(9);launch(a);for(let i=0;i<100;i++)step(a,1/120);const b=JSON.parse(JSON.stringify(a));for(let i=0;i<200;i++){step(a,1/120);step(b,1/120);}expect(b).toEqual(a);});
+});
+describe('ball control and lives',()=>{
+ it('changes launch angle with paddle contact and always sends the ball up',()=>{for(const x of [W/2-45,W/2,W/2+45]){const g=newGame();g.status='playing';g.balls=[{x,y:PADDLE_Y-8,vx:0,vy:400}];step(g,1/60);expect(g.balls[0].vy).toBeLessThan(0);expect(Math.sign(g.balls[0].vx)).toBe(Math.sign(x-W/2));}});
+ it('costs one life only when every ball is gone and ends after three misses',()=>{const g=newGame();for(let life=2;life>=0;life--){g.status='playing';g.balls=[{x:200,y:H+10,vx:0,vy:400}];step(g,1/120);expect(g.lives).toBe(life);expect(g.status).toBe(life?'ready':'lost');}const multi=newGame();multi.status='playing';multi.balls=[{x:200,y:H+10,vx:0,vy:300},{x:300,y:400,vx:100,vy:-300}];step(multi,1/120);expect(multi.lives).toBe(3);});
+ it('does not simulate during pause or consume a huge background-tab delta',()=>{const g=newGame();launch(g);g.status='paused';const copy=structuredClone(g);step(g,100);expect(g).toEqual(copy);g.status='playing';const before=g.elapsed;step(g,100);expect(g.elapsed-before).toBeLessThanOrEqual(1/30+.0001);});
+ it('does not tunnel through bricks at maximum speed',()=>{const g=newGame();const brick=g.bricks.find(b=>b.hp===1&&b.y>600)!;g.bricks.forEach(b=>{if(b!==brick)b.hp=0;});g.status='playing';g.balls=[{x:brick.x+BRICK/2,y:brick.y+BRICK+9,vx:0,vy:-590}];const events=step(g,1/30);expect(events.some(e=>e.type==='brick')).toBe(true);expect(brick.hp).toBe(0);});
+ it('keeps a save valid across long games in all levels',()=>{for(let level=1;level<=20;level++){const s=newSave();s.unlocked=20;s.game=newGame(level);launch(s.game);for(let t=0;t<12000;t++){s.game.paddle=Math.max(80,Math.min(W-80,s.game.balls[0]?.x||W/2));step(s.game,1/120);if(s.game.status==='ready')launch(s.game);if(s.game.status==='won'||s.game.status==='lost')break;}expect(validSave(s),`level ${level}`).toBe(true);}});
+});
+describe('save validation',()=>{
+ it('accepts a normal snapshot and rejects locked-level access or altered boards',()=>{const s=newSave();expect(validSave(s)).toBe(true);s.game.level=20;expect(validSave(s)).toBe(false);s.game=newGame();s.game.bricks[0].x=999;expect(validSave(s)).toBe(false);});
+ it('rejects non-finite values, unlimited lives, malformed arrays, and oversized ball counts',()=>{for(const mutate of [(s:ReturnType<typeof newSave>)=>s.game.score=NaN,s=>s.game.lives=9,s=>s.game.balls.push(...Array(MAX_BALLS).fill(s.game.balls[0])),s=>s.completed=[21],s=>s.game.balls=[null as never],s=>s.game.drops=[null as never]]){const s=newSave();mutate(s);expect(validSave(s)).toBe(false);}expect(validSave(null)).toBe(false);expect(validSave({schema:2})).toBe(false);});
+});
+
+ describe('dense-board save codec and swarms',()=>{
+ it('stores all 2916 brick states in a small exact snapshot',()=>{const s=newSave();launch(s.game);for(let t=0;t<500;t++)step(s.game,1/120);const packed=packSave(s);expect(JSON.stringify(packed).length).toBeLessThan(16000);expect(parseSave(JSON.parse(JSON.stringify(packed)))).toEqual(s);});
+ it('rejects forged hit points and truncated packed boards',()=>{const p=packSave(newSave());p.game.bricks='9'+p.game.bricks.slice(1);expect(parseSave(p)).toBeNull();p.game.bricks='1';expect(parseSave(p)).toBeNull();});
+ it('adds exactly three balls per pickup and caps swarms',()=>{const g=newGame();launch(g);g.balls=[{x:400,y:800,vx:0,vy:-400}];g.drops=[{x:400,y:800,kind:3,fall:false}];step(g,1/120);expect(g.balls.length).toBe(4);g.balls=Array.from({length:MAX_BALLS-1},()=>({x:400,y:800,vx:0,vy:-400}));g.drops=[{x:400,y:800,kind:3,fall:false}];step(g,1/120);expect(g.balls.length).toBe(MAX_BALLS);});
+ });

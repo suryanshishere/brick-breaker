@@ -1,0 +1,36 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "brick-breaker",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "account_id": "dde2a53b8bb4d3259e14ee30b7c560e2",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "routes": [
+    {
+      "pattern": "brick-breaker.suryansh.lol",
+      "custom_domain": true
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "brick-breaker",
+      "database_id": "9532af26-65ec-41a0-bed8-085cb30a14ed",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "APP_ORIGIN": "https://brick-breaker.suryansh.lol",
+    "GOOGLE_CLIENT_ID": "1018044059115-3cpolctsam989rcjeu6gm577bk7ig4mp.apps.googleusercontent.com"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
