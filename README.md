@@ -29,6 +29,7 @@ This serves the built app and local API on port 8787. For frontend hot reload, a
 
 ```sh
 npm test
+npm run test:e2e
 npm run check
 npm run build
 npm run deploy
@@ -38,7 +39,7 @@ npm run deploy
 
 Cloudflare Worker `brick-breaker` serves Vite assets and `/api` routes. D1 database `brick-breaker` stores account profiles, hashed session identifiers, and game saves. Infrastructure IDs and the public Google client ID are in `wrangler.jsonc`; they are not credentials. There is no Google client secret in this project: the Worker verifies Google ID token signatures, issuer, audience, expiry, verified email, and a browser-specific nonce against Google’s public keys.
 
-The repository’s GitHub Actions check runs tests and a production build. Cloudflare Workers Builds connects this repository’s `main` branch to the Worker. Build command: `npm test && npm run build`. Deploy command: `npx wrangler deploy`. Keep the Worker name aligned with the Wrangler configuration. Future D1 schema migrations should be reviewed and applied with `npx wrangler d1 migrations apply brick-breaker --remote` before deploying code that needs them.
+The repository’s GitHub Actions check runs unit tests, a production build, and headless desktop/mobile browser checks. On Windows the browser checks use installed Google Chrome; elsewhere run `npx playwright install --with-deps chromium` first. Cloudflare Workers Builds connects this repository’s `main` branch to the Worker. Build command: `npm test && npm run build`. Deploy command: `npx wrangler deploy`. Preview deployments are disabled because Google sign-in is restricted to the production domain. Keep the Worker name aligned with the Wrangler configuration. Future D1 schema migrations should be reviewed and applied with `npx wrangler d1 migrations apply brick-breaker --remote` before deploying code that needs them.
 
 ## Data and security
 

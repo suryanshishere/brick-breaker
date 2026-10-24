@@ -55,7 +55,7 @@ export function step(g:Game,dt:number):GameEvent[]{
  else if(!g.balls.length){g.lives--;g.wide=0;g.slow=0;g.drops=[{x:414,y:825,kind:3,fall:false}];g.status=g.lives>0?'ready':'lost';g.balls=[{x:g.paddle,y:PADDLE_Y-14,vx:0,vy:0}];events.push({type:g.lives>0?'life':'lost',x:g.paddle,y:PADDLE_Y});}
  return events;
 }
-export function packSave(s:Save):PackedSave{return {schema:2,unlocked:s.unlocked,completed:s.completed,best:s.best,updatedAt:s.updatedAt,game:{...s.game,bricks:s.game.bricks.map(b=>String(b.hp)).join('')}};}
+export function packSave(s:Save):PackedSave{const g=s.game;return {schema:2,unlocked:s.unlocked,completed:s.completed,best:s.best,updatedAt:s.updatedAt,game:{level:g.level,status:g.status,score:g.score,lives:g.lives,elapsed:g.elapsed,paddle:g.paddle,balls:g.balls.map(({x,y,vx,vy})=>({x,y,vx,vy})),bricks:g.bricks.map(b=>String(b.hp)).join(''),drops:g.drops.map(({x,y,kind,fall})=>({x,y,kind,fall})),wide:g.wide,slow:g.slow,started:g.started}};}
 export function parseSave(value:unknown):Save|null{try{if(!value||typeof value!=='object')return null;const raw=value as PackedSave;if(raw.schema!==2||typeof raw.game?.bricks!=='string'||raw.game.bricks.length!==COLS*ROWS||!/^[0-3]+$/.test(raw.game.bricks)||!Number.isInteger(raw.game.level)||raw.game.level<1||raw.game.level>20)return null;const bricks=layout(raw.game.level);for(let i=0;i<bricks.length;i++)bricks[i].hp=Number(raw.game.bricks[i]);const save={...raw,game:{...raw.game,bricks}} as Save;return validSave(save)?save:null;}catch{return null;}}
 export function validSave(value:unknown):value is Save{
  if(!value||typeof value!=='object')return false;const s=value as Save,g=s.game;const finite=(n:unknown,min:number,max:number)=>typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max;

@@ -18,6 +18,7 @@ describe('save validation',()=>{
 });
 
  describe('dense-board save codec and swarms',()=>{
+ it('keeps only game fields in the stored snapshot',()=>{const s=newSave();Object.assign(s.game,{recording:'not game data'});Object.assign(s.game.balls[0],{extra:'not game data'});const p=packSave(s);expect(p.game).not.toHaveProperty('recording');expect(p.game.balls[0]).not.toHaveProperty('extra');});
  it('stores all 2916 brick states in a small exact snapshot',()=>{const s=newSave();launch(s.game);for(let t=0;t<500;t++)step(s.game,1/120);const packed=packSave(s);expect(JSON.stringify(packed).length).toBeLessThan(16000);expect(parseSave(JSON.parse(JSON.stringify(packed)))).toEqual(s);});
  it('rejects forged hit points and truncated packed boards',()=>{const p=packSave(newSave());p.game.bricks='9'+p.game.bricks.slice(1);expect(parseSave(p)).toBeNull();p.game.bricks='1';expect(parseSave(p)).toBeNull();});
  it('adds exactly three balls per pickup and caps swarms',()=>{const g=newGame();launch(g);g.balls=[{x:400,y:800,vx:0,vy:-400}];g.drops=[{x:400,y:800,kind:3,fall:false}];step(g,1/120);expect(g.balls.length).toBe(4);g.balls=Array.from({length:MAX_BALLS-1},()=>({x:400,y:800,vx:0,vy:-400}));g.drops=[{x:400,y:800,kind:3,fall:false}];step(g,1/120);expect(g.balls.length).toBe(MAX_BALLS);});
