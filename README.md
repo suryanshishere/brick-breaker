@@ -50,3 +50,7 @@ Guest data and each account’s offline cache use separate storage keys. Account
 ## Verification
 
 Tests cover all 20 layouts, unlock rules, exact snapshot simulation, lives and multiball, aiming, collision substeps, malformed saves, cross-origin writes, anonymous save access, and sign-in nonce requirements. Browser checks cover desktop and mobile layouts, keyboard and touch-strip controls, persistence, sharing, recording, and production Google sign-in.
+
+## Analytics
+
+Microsoft Clarity project `z2svp9vjnl` tracks the production hostname only. The asynchronous loader is in `public/clarity.js` and is included in the page head. Local development and preview hosts do not load Clarity. The account button is masked in session replays. See the [Clarity project](https://clarity.microsoft.com/projects/view/z2svp9vjnl/dashboard) for traffic, heatmaps, and recordings. Clarity does not capture the contents of the game canvas.

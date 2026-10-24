@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "dev:local": "node scripts/dev-local.mjs",
     "build": "npm run check && vite build",
     "check": "tsc --noEmit && tsc -p tsconfig.worker.json --noEmit",
     "test": "vitest run",
